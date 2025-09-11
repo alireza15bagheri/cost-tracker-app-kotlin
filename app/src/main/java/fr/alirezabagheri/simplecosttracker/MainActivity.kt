@@ -18,6 +18,7 @@ import com.google.firebase.ktx.Firebase
 import fr.alirezabagheri.simplecosttracker.ui.auth.LoginScreen
 import fr.alirezabagheri.simplecosttracker.ui.auth.SignUpScreen
 import fr.alirezabagheri.simplecosttracker.ui.dashboard.DashboardScreen
+import fr.alirezabagheri.simplecosttracker.ui.period.PeriodsScreen
 import fr.alirezabagheri.simplecosttracker.ui.theme.SimpleCostTrackerTheme
 
 class MainActivity : ComponentActivity() {
@@ -44,6 +45,7 @@ sealed class Screen(val route: String) {
     object LoginScreen : Screen("login")
     object SignUpScreen : Screen("signup")
     object DashboardScreen : Screen("dashboard")
+    object PeriodsScreen : Screen("periods") // New screen route
 }
 
 @Composable
@@ -64,6 +66,9 @@ fun AppNavigation(auth: FirebaseAuth) {
         }
         composable(Screen.DashboardScreen.route) {
             DashboardScreen(navController = navController, auth = auth)
+        }
+        composable(Screen.PeriodsScreen.route) { // New screen destination
+            PeriodsScreen(navController = navController)
         }
     }
 }

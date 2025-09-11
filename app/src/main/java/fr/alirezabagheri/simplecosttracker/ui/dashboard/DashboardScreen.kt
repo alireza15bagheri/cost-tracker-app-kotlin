@@ -1,20 +1,16 @@
 package fr.alirezabagheri.simplecosttracker.ui.dashboard
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import fr.alirezabagheri.simplecosttracker.Screen
@@ -22,31 +18,54 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(navController: NavController, auth: FirebaseAuth) {
+fun DashboardScreen(
+    navController: NavController,
+    auth: FirebaseAuth,
+    viewModel: DashboardViewModel = viewModel()
+) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val currentUser = auth.currentUser
-    val username = currentUser?.email?.split("@")?.get(0) ?: "User"
+    val periods by viewModel.periods.collectAsState()
+    val activePeriod by viewModel.activePeriod.collectAsState()
+    var isDropdownExpanded by remember { mutableStateOf(false) }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                Spacer(Modifier.height(12.dp))
-                NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.ExitToApp, contentDescription = "Sign Out") },
-                    label = { Text("Sign Out") },
-                    selected = false,
-                    onClick = {
-                        auth.signOut()
-                        navController.navigate(Screen.LoginScreen.route) {
-                            // Clear the back stack to prevent going back to the dashboard
-                            popUpTo(navController.graph.startDestinationId) {
-                                inclusive = true
+                Column(
+                    modifier = Modifier.fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column { // Top items
+                        Spacer(Modifier.height(12.dp))
+                        NavigationDrawerItem(
+                            icon = { Icon(Icons.Default.DateRange, contentDescription = "Manage Periods") },
+                            label = { Text("Manage Periods") },
+                            selected = false,
+                            onClick = {
+                                scope.launch { drawerState.close() }
+                                navController.navigate(Screen.PeriodsScreen.route)
                             }
-                        }
+                        )
                     }
-                )
+                    Column { // Bottom items
+                        NavigationDrawerItem(
+                            icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Sign Out") },
+                            label = { Text("Sign Out") },
+                            selected = false,
+                            onClick = {
+                                auth.signOut()
+                                navController.navigate(Screen.LoginScreen.route) {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        inclusive = true
+                                    }
+                                }
+                            }
+                        )
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
             }
         }
     ) {
@@ -56,16 +75,9 @@ fun DashboardScreen(navController: NavController, auth: FirebaseAuth) {
                     title = { Text("Dashboard") },
                     navigationIcon = {
                         IconButton(onClick = {
-                            scope.launch {
-                                drawerState.apply {
-                                    if (isClosed) open() else close()
-                                }
-                            }
+                            scope.launch { drawerState.open() }
                         }) {
-                            Icon(
-                                imageVector = Icons.Filled.Menu,
-                                contentDescription = "Menu"
-                            )
+                            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
                         }
                     }
                 )
@@ -76,12 +88,41 @@ fun DashboardScreen(navController: NavController, auth: FirebaseAuth) {
                     .fillMaxSize()
                     .padding(innerPadding)
                     .padding(16.dp),
-                verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Welcome,", style = MaterialTheme.typography.headlineSmall)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(text = username, style = MaterialTheme.typography.headlineMedium)
+                // Period Selector Dropdown
+                ExposedDropdownMenuBox(
+                    expanded = isDropdownExpanded,
+                    onExpandedChange = { isDropdownExpanded = !isDropdownExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = activePeriod?.name ?: "No Period Selected",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Active Period") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
+                        modifier = Modifier
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = isDropdownExpanded,
+                        onDismissRequest = { isDropdownExpanded = false }
+                    ) {
+                        periods.forEach { period ->
+                            DropdownMenuItem(
+                                text = { Text(period.name) },
+                                onClick = {
+                                    viewModel.setActivePeriod(period)
+                                    isDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                // Content for the active period will go here
+                Text("Content for ${activePeriod?.name ?: "..."}", style = MaterialTheme.typography.bodyLarge)
             }
         }
     }

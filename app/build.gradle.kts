@@ -41,7 +41,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // This is the missing line that connects the release build to your keystore
             signingConfig = signingConfigs.getByName("release")
         }
     }
@@ -79,9 +78,13 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.playServicesBase)
 
     // Navigation Compose
     implementation(libs.androidx.navigation.compose)
+
+    // ViewModel Compose
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
