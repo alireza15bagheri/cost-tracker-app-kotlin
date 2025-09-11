@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "69088605957",
+    "project_id": "simple-cost-tracker",
+    "storage_bucket": "simple-cost-tracker.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:69088605957:android:ed28d3b0c115b6c920296c",
+        "android_client_info": {
+          "package_name": "fr.alirezabagheri.simplecosttracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsotd8sw85UAB4j23oTibxtWnswYDAvrI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
