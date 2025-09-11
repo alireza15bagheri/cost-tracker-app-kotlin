@@ -9,6 +9,18 @@ android {
     namespace = "fr.alirezabagheri.simplecosttracker"
     compileSdk = 34
 
+    signingConfigs {
+        create("release") {
+            val storeFileValue = System.getenv("RELEASE_STORE_FILE") ?: project.property("RELEASE_STORE_FILE")
+            if (storeFileValue != null) {
+                storeFile = rootProject.file(storeFileValue as String)
+                storePassword = System.getenv("RELEASE_STORE_PASSWORD") ?: project.property("RELEASE_STORE_PASSWORD") as String
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: project.property("RELEASE_KEY_ALIAS") as String
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: project.property("RELEASE_KEY_PASSWORD") as String
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "fr.alirezabagheri.simplecosttracker"
         minSdk = 23
@@ -29,6 +41,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // This is the missing line that connects the release build to your keystore
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
