@@ -19,6 +19,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import fr.alirezabagheri.simplecosttracker.ui.auth.LoginScreen
 import fr.alirezabagheri.simplecosttracker.ui.auth.SignUpScreen
+import fr.alirezabagheri.simplecosttracker.ui.budget.BudgetsScreen
 import fr.alirezabagheri.simplecosttracker.ui.dashboard.DashboardScreen
 import fr.alirezabagheri.simplecosttracker.ui.income.IncomesScreen
 import fr.alirezabagheri.simplecosttracker.ui.period.PeriodsScreen
@@ -52,6 +53,9 @@ sealed class Screen(val route: String) {
     object IncomesScreen : Screen("incomes/{periodId}") {
         fun createRoute(periodId: String) = "incomes/$periodId"
     }
+    object BudgetsScreen : Screen("budgets/{periodId}") {
+        fun createRoute(periodId: String) = "budgets/$periodId"
+    }
 }
 
 @Composable
@@ -83,6 +87,15 @@ fun AppNavigation(auth: FirebaseAuth) {
             val periodId = backStackEntry.arguments?.getString("periodId")
             if (periodId != null) {
                 IncomesScreen(navController = navController, periodId = periodId)
+            }
+        }
+        composable(
+            route = Screen.BudgetsScreen.route,
+            arguments = listOf(navArgument("periodId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val periodId = backStackEntry.arguments?.getString("periodId")
+            if (periodId != null) {
+                BudgetsScreen(navController = navController, periodId = periodId)
             }
         }
     }

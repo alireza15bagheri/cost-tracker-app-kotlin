@@ -2,17 +2,12 @@ package fr.alirezabagheri.simplecosttracker.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import fr.alirezabagheri.simplecosttracker.data.Budget
 import fr.alirezabagheri.simplecosttracker.data.FirestoreService
 import fr.alirezabagheri.simplecosttracker.data.Income
 import fr.alirezabagheri.simplecosttracker.data.Period
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -25,16 +20,25 @@ class DashboardViewModel : ViewModel() {
     val activePeriod: StateFlow<Period?> = _activePeriod.asStateFlow()
 
     val activePeriodIncomes: StateFlow<List<Income>> = _activePeriod.flatMapLatest { period ->
-        if (period != null) {
-            FirestoreService.getIncomesFlow(period.id)
-        } else {
-            MutableStateFlow(emptyList())
-        }
+        if (period != null) FirestoreService.getIncomesFlow(period.id)
+        else MutableStateFlow(emptyList())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val totalIncomes: StateFlow<Double> = activePeriodIncomes.map { incomes ->
-        incomes.sumOf { it.amount }
+    val totalIncomes: StateFlow<Double> = activePeriodIncomes.map { it.sumOf(Income::amount) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    val activePeriodBudgets: StateFlow<List<Budget>> = _activePeriod.flatMapLatest { period ->
+        if (period != null) FirestoreService.getBudgetsFlow(period.id)
+        else MutableStateFlow(emptyList())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val totalBudgets: StateFlow<Double> = activePeriodBudgets.map { it.sumOf(Budget::allocatedAmount) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
+    val remainingAmount: StateFlow<Double> = combine(totalIncomes, totalBudgets) { incomes, budgets ->
+        incomes - budgets
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+
 
     init {
         viewModelScope.launch {
@@ -55,11 +59,14 @@ class DashboardViewModel : ViewModel() {
         FirestoreService.deleteIncome(incomeId)
     }
 
+    fun deleteBudget(budgetId: String) {
+        FirestoreService.deleteBudget(budgetId)
+    }
+
     fun deleteActivePeriod() {
         viewModelScope.launch {
             _activePeriod.value?.id?.let {
                 FirestoreService.deletePeriodAndAssociatedData(it)
-                // After deletion, reset the active period
                 _activePeriod.value = _periods.value.firstOrNull()
             }
         }

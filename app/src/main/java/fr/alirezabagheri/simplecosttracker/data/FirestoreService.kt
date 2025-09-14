@@ -33,13 +33,20 @@ object FirestoreService {
     }
 
     suspend fun deletePeriodAndAssociatedData(periodId: String) {
-        // 1. Delete all incomes associated with the period
-        val incomesToDelete = db.collection("incomes").whereEqualTo("periodId", periodId).get().await()
         val batch = db.batch()
+
+        // 1. Find and mark all incomes for deletion
+        val incomesToDelete = db.collection("incomes").whereEqualTo("periodId", periodId).get().await()
         incomesToDelete.documents.forEach { batch.delete(it.reference) }
+
+        // 2. Find and mark all budgets for deletion
+        val budgetsToDelete = db.collection("budgets").whereEqualTo("periodId", periodId).get().await()
+        budgetsToDelete.documents.forEach { batch.delete(it.reference) }
+
+        // 3. Commit all deletions
         batch.commit().await()
 
-        // 2. Delete the period itself
+        // 4. Delete the period itself
         db.collection("periods").document(periodId).delete().await()
     }
 
@@ -49,7 +56,7 @@ object FirestoreService {
             periodId = periodId,
             description = description,
             amount = amount,
-            date = Date() // Sets the income date to now
+            date = Date()
         )
         db.collection("incomes").add(income)
     }
@@ -63,5 +70,25 @@ object FirestoreService {
 
     fun deleteIncome(incomeId: String) {
         db.collection("incomes").document(incomeId).delete()
+    }
+
+    // Budget-related functions
+    fun addBudget(category: String, amount: Double, periodId: String) {
+        val budget = Budget(
+            periodId = periodId,
+            category = category,
+            allocatedAmount = amount
+        )
+        db.collection("budgets").add(budget)
+    }
+
+    fun getBudgetsFlow(periodId: String): Flow<List<Budget>> {
+        return db.collection("budgets")
+            .whereEqualTo("periodId", periodId)
+            .dataObjects<Budget>()
+    }
+
+    fun deleteBudget(budgetId: String) {
+        db.collection("budgets").document(budgetId).delete()
     }
 }

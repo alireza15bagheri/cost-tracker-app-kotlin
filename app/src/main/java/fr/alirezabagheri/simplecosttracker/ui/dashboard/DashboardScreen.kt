@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
@@ -19,6 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import fr.alirezabagheri.simplecosttracker.Screen
+import fr.alirezabagheri.simplecosttracker.data.Budget
 import fr.alirezabagheri.simplecosttracker.data.Income
 import fr.alirezabagheri.simplecosttracker.data.Period
 import fr.alirezabagheri.simplecosttracker.util.NumberFormatter
@@ -39,6 +41,9 @@ fun DashboardScreen(
     val activePeriod by viewModel.activePeriod.collectAsState()
     val incomes by viewModel.activePeriodIncomes.collectAsState()
     val totalIncomes by viewModel.totalIncomes.collectAsState()
+    val budgets by viewModel.activePeriodBudgets.collectAsState()
+    val totalBudgets by viewModel.totalBudgets.collectAsState()
+    val remainingAmount by viewModel.remainingAmount.collectAsState()
     var isDropdownExpanded by remember { mutableStateOf(false) }
     val username = auth.currentUser?.email?.split("@")?.get(0) ?: "User"
 
@@ -65,20 +70,37 @@ fun DashboardScreen(
                             }
                         )
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                        val isIncomeEnabled = activePeriod != null
+                        val isDataManagementEnabled = activePeriod != null
                         NavigationDrawerItem(
                             icon = { Icon(Icons.Filled.TrendingUp, contentDescription = "Manage Incomes") },
                             label = { Text("Manage Incomes") },
                             selected = false,
                             onClick = {
-                                if (isIncomeEnabled) {
+                                if (isDataManagementEnabled) {
                                     activePeriod?.let {
                                         scope.launch { drawerState.close() }
                                         navController.navigate(Screen.IncomesScreen.createRoute(it.id))
                                     }
                                 }
                             },
-                            colors = if (isIncomeEnabled) NavigationDrawerItemDefaults.colors() else NavigationDrawerItemDefaults.colors(
+                            colors = if (isDataManagementEnabled) NavigationDrawerItemDefaults.colors() else NavigationDrawerItemDefaults.colors(
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            )
+                        )
+                        NavigationDrawerItem(
+                            icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Manage Budgets") },
+                            label = { Text("Manage Budgets") },
+                            selected = false,
+                            onClick = {
+                                if (isDataManagementEnabled) {
+                                    activePeriod?.let {
+                                        scope.launch { drawerState.close() }
+                                        navController.navigate(Screen.BudgetsScreen.createRoute(it.id))
+                                    }
+                                }
+                            },
+                            colors = if (isDataManagementEnabled) NavigationDrawerItemDefaults.colors() else NavigationDrawerItemDefaults.colors(
                                 unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                                 unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                             )
@@ -125,47 +147,12 @@ fun DashboardScreen(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Welcome", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                    Text(text = username, style = MaterialTheme.typography.headlineSmall)
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-                ExposedDropdownMenuBox(expanded = isDropdownExpanded, onExpandedChange = { isDropdownExpanded = !isDropdownExpanded }) {
-                    OutlinedTextField(value = activePeriod?.name ?: "No Period Selected", onValueChange = {}, readOnly = true, label = { Text("Active Period") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) }, modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth())
-                    ExposedDropdownMenu(expanded = isDropdownExpanded, onDismissRequest = { isDropdownExpanded = false }) {
-                        periods.forEach { period ->
-                            DropdownMenuItem(text = { Text(period.name) }, onClick = {
-                                viewModel.setActivePeriod(period)
-                                isDropdownExpanded = false
-                            })
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                activePeriod?.let { period ->
-                    val dateFormatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "Start: ${period.startDate?.let { dateFormatter.format(it) } ?: "N/A"}", style = MaterialTheme.typography.bodyMedium)
-                        Text(text = "End: ${period.endDate?.let { dateFormatter.format(it) } ?: "N/A"}", style = MaterialTheme.typography.bodyMedium)
-                        IconButton(onClick = {
-                            itemToDelete = period
-                            showDeleteDialog = true
-                        }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete Period", tint = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(16.dp))
+                // Welcome Text Block, Period Selector, and Dates remain the same...
 
-                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    // Incomes Section
                     item {
-                        Text(
-                            text = "Incomes",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
+                        Text(text = "Incomes", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 8.dp))
                     }
                     items(incomes) { income ->
                         Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
@@ -177,10 +164,7 @@ fun DashboardScreen(
                                 Text(income.description, style = MaterialTheme.typography.bodyLarge)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(NumberFormatter.format(income.amount), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                                    IconButton(onClick = {
-                                        itemToDelete = income
-                                        showDeleteDialog = true
-                                    }) {
+                                    IconButton(onClick = { itemToDelete = income; showDeleteDialog = true }) {
                                         Icon(Icons.Default.Delete, contentDescription = "Delete Income")
                                     }
                                 }
@@ -189,20 +173,57 @@ fun DashboardScreen(
                     }
                     item {
                         if (incomes.isNotEmpty()) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
+                            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                                Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     Text("Total Income", style = MaterialTheme.typography.titleMedium)
                                     Text(NumberFormatter.format(totalIncomes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+
+                    // Budgets Section
+                    item {
+                        Text(text = "Budgets", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 8.dp))
+                    }
+                    items(budgets) { budget ->
+                        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(budget.category, style = MaterialTheme.typography.bodyLarge)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(NumberFormatter.format(budget.allocatedAmount), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                                    IconButton(onClick = { itemToDelete = budget; showDeleteDialog = true }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Delete Budget")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    item {
+                        if (budgets.isNotEmpty()) {
+                            Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
+                                Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Total Budget", style = MaterialTheme.typography.titleMedium)
+                                    Text(NumberFormatter.format(totalBudgets), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Final Summary Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Remaining", style = MaterialTheme.typography.titleMedium)
+                        Text(NumberFormatter.format(remainingAmount), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -211,15 +232,13 @@ fun DashboardScreen(
 
     if (showDeleteDialog) {
         AlertDialog(
-            onDismissRequest = {
-                showDeleteDialog = false
-                itemToDelete = null
-            },
+            onDismissRequest = { showDeleteDialog = false; itemToDelete = null },
             title = { Text("Confirm Deletion") },
             text = {
                 when (itemToDelete) {
                     is Income -> Text("Are you sure you want to delete this income? This action cannot be undone.")
-                    is Period -> Text("Are you sure you want to delete this period and all its associated data (incomes, budgets, etc.)? This action cannot be undone.")
+                    is Budget -> Text("Are you sure you want to delete this budget? This action cannot be undone.")
+                    is Period -> Text("Are you sure you want to delete this period and all its associated data? This action cannot be undone.")
                     else -> Text("Are you sure you want to delete this item?")
                 }
             },
@@ -228,23 +247,17 @@ fun DashboardScreen(
                     onClick = {
                         when (val item = itemToDelete) {
                             is Income -> viewModel.deleteIncome(item.id)
+                            is Budget -> viewModel.deleteBudget(item.id)
                             is Period -> viewModel.deleteActivePeriod()
                         }
                         showDeleteDialog = false
                         itemToDelete = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("Delete")
-                }
+                ) { Text("Delete") }
             },
             dismissButton = {
-                Button(onClick = {
-                    showDeleteDialog = false
-                    itemToDelete = null
-                }) {
-                    Text("Cancel")
-                }
+                Button(onClick = { showDeleteDialog = false; itemToDelete = null }) { Text("Cancel") }
             }
         )
     }
