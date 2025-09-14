@@ -10,5 +10,7 @@ data class Period(
     val name: String = "",
     val startDate: Date? = null,
     val endDate: Date? = null,
+    val dailySpendingLimit: Double = 0.0,
+    val notes: String = "",
     @ServerTimestamp val createdAt: Date? = null
 )

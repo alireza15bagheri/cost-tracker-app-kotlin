@@ -22,22 +22,19 @@ import fr.alirezabagheri.simplecosttracker.ui.auth.SignUpScreen
 import fr.alirezabagheri.simplecosttracker.ui.budget.BudgetsScreen
 import fr.alirezabagheri.simplecosttracker.ui.dashboard.DashboardScreen
 import fr.alirezabagheri.simplecosttracker.ui.income.IncomesScreen
+import fr.alirezabagheri.simplecosttracker.ui.misccost.MiscCostsScreen
 import fr.alirezabagheri.simplecosttracker.ui.period.PeriodsScreen
+import fr.alirezabagheri.simplecosttracker.ui.spending.DailySpendingsScreen
 import fr.alirezabagheri.simplecosttracker.ui.theme.SimpleCostTrackerTheme
 
 class MainActivity : ComponentActivity() {
-
     private val auth: FirebaseAuth by lazy { Firebase.auth }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             SimpleCostTrackerTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     AppNavigation(auth)
                 }
             }
@@ -56,46 +53,54 @@ sealed class Screen(val route: String) {
     object BudgetsScreen : Screen("budgets/{periodId}") {
         fun createRoute(periodId: String) = "budgets/$periodId"
     }
+    object DailySpendingsScreen : Screen("spendings/{periodId}") {
+        fun createRoute(periodId: String) = "spendings/$periodId"
+    }
+    object MiscCostsScreen : Screen("misccosts/{periodId}") {
+        fun createRoute(periodId: String) = "misccosts/$periodId"
+    }
 }
 
 @Composable
 fun AppNavigation(auth: FirebaseAuth) {
     val navController = rememberNavController()
-    val startDestination = if (auth.currentUser != null) {
-        Screen.DashboardScreen.route
-    } else {
-        Screen.LoginScreen.route
-    }
+    val startDestination = if (auth.currentUser != null) Screen.DashboardScreen.route else Screen.LoginScreen.route
 
     NavHost(navController = navController, startDestination = startDestination) {
-        composable(Screen.LoginScreen.route) {
-            LoginScreen(navController = navController, auth = auth)
-        }
-        composable(Screen.SignUpScreen.route) {
-            SignUpScreen(navController = navController, auth = auth)
-        }
-        composable(Screen.DashboardScreen.route) {
-            DashboardScreen(navController = navController, auth = auth)
-        }
-        composable(Screen.PeriodsScreen.route) {
-            PeriodsScreen(navController = navController)
-        }
+        composable(Screen.LoginScreen.route) { LoginScreen(navController = navController, auth = auth) }
+        composable(Screen.SignUpScreen.route) { SignUpScreen(navController = navController, auth = auth) }
+        composable(Screen.DashboardScreen.route) { DashboardScreen(navController = navController, auth = auth) }
+        composable(Screen.PeriodsScreen.route) { PeriodsScreen(navController = navController) }
         composable(
             route = Screen.IncomesScreen.route,
             arguments = listOf(navArgument("periodId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val periodId = backStackEntry.arguments?.getString("periodId")
-            if (periodId != null) {
-                IncomesScreen(navController = navController, periodId = periodId)
+            backStackEntry.arguments?.getString("periodId")?.let {
+                IncomesScreen(navController = navController, periodId = it)
             }
         }
         composable(
             route = Screen.BudgetsScreen.route,
             arguments = listOf(navArgument("periodId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val periodId = backStackEntry.arguments?.getString("periodId")
-            if (periodId != null) {
-                BudgetsScreen(navController = navController, periodId = periodId)
+            backStackEntry.arguments?.getString("periodId")?.let {
+                BudgetsScreen(navController = navController, periodId = it)
+            }
+        }
+        composable(
+            route = Screen.DailySpendingsScreen.route,
+            arguments = listOf(navArgument("periodId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            backStackEntry.arguments?.getString("periodId")?.let {
+                DailySpendingsScreen(navController = navController, periodId = it)
+            }
+        }
+        composable(
+            route = Screen.MiscCostsScreen.route,
+            arguments = listOf(navArgument("periodId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            backStackEntry.arguments?.getString("periodId")?.let {
+                MiscCostsScreen(navController = navController, periodId = it)
             }
         }
     }
