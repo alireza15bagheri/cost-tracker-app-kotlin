@@ -21,6 +21,7 @@ import com.google.firebase.auth.FirebaseAuth
 import fr.alirezabagheri.simplecosttracker.Screen
 import fr.alirezabagheri.simplecosttracker.data.Income
 import fr.alirezabagheri.simplecosttracker.data.Period
+import fr.alirezabagheri.simplecosttracker.util.NumberFormatter
 import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlinx.coroutines.launch
@@ -124,7 +125,6 @@ fun DashboardScreen(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Welcome Text Block, Period Selector, and Dates remain the same...
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(text = "Welcome", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                     Text(text = username, style = MaterialTheme.typography.headlineSmall)
@@ -159,9 +159,7 @@ fun DashboardScreen(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Incomes List with Title and Total
                 LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    // Title for the incomes section
                     item {
                         Text(
                             text = "Incomes",
@@ -169,7 +167,6 @@ fun DashboardScreen(
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
-                    // List of income items
                     items(incomes) { income ->
                         Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                             Row(
@@ -179,7 +176,7 @@ fun DashboardScreen(
                             ) {
                                 Text(income.description, style = MaterialTheme.typography.bodyLarge)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text("%.2f".format(income.amount), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                                    Text(NumberFormatter.format(income.amount), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                                     IconButton(onClick = {
                                         itemToDelete = income
                                         showDeleteDialog = true
@@ -190,7 +187,6 @@ fun DashboardScreen(
                             }
                         }
                     }
-                    // Total incomes display, placed as the last item in the list
                     item {
                         if (incomes.isNotEmpty()) {
                             Card(
@@ -203,7 +199,7 @@ fun DashboardScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text("Total Income", style = MaterialTheme.typography.titleMedium)
-                                    Text("%.2f".format(totalIncomes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text(NumberFormatter.format(totalIncomes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }

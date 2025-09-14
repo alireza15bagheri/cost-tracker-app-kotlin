@@ -18,6 +18,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import fr.alirezabagheri.simplecosttracker.util.NumberVisualTransformation
+import fr.alirezabagheri.simplecosttracker.util.NumberFormatter
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -52,7 +54,6 @@ fun IncomesScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Input Form
             OutlinedTextField(
                 value = description,
                 onValueChange = { viewModel.description.value = it },
@@ -62,14 +63,15 @@ fun IncomesScreen(
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = amount,
-                onValueChange = { viewModel.amount.value = it },
+                onValueChange = { viewModel.amount.value = it.filter { char -> char.isDigit() || char == '.' } },
                 label = { Text("Amount") },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                visualTransformation = NumberVisualTransformation()
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = { viewModel.addIncome() }, // <-- THIS LINE IS ADDED
+                onClick = { viewModel.addIncome() },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Income")
@@ -81,7 +83,6 @@ fun IncomesScreen(
             HorizontalDivider()
             Spacer(modifier = Modifier.height(16.dp))
 
-            // List of Incomes
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(incomes) { income ->
                     Card(
@@ -109,7 +110,7 @@ fun IncomesScreen(
                                 }
                             }
                             Text(
-                                text = "%.2f".format(income.amount),
+                                text = NumberFormatter.format(income.amount),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold
@@ -119,7 +120,6 @@ fun IncomesScreen(
                 }
             }
 
-            // Total Incomes Display
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -135,7 +135,7 @@ fun IncomesScreen(
                 ) {
                     Text("Total Income", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "%.2f".format(totalIncomes),
+                        NumberFormatter.format(totalIncomes),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
