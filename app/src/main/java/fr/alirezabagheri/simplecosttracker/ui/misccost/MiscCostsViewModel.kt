@@ -3,7 +3,7 @@ package fr.alirezabagheri.simplecosttracker.ui.misccost
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import fr.alirezabagheri.simplecosttracker.data.FirestoreService
+import fr.alirezabagheri.simplecosttracker.data.CostTrackerRepository
 import fr.alirezabagheri.simplecosttracker.data.MiscCost
 import fr.alirezabagheri.simplecosttracker.util.NumberFormatter
 import kotlinx.coroutines.flow.*
@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 
 class MiscCostsViewModel(private val periodId: String) : ViewModel() {
 
+    private val repository = CostTrackerRepository()
     private val _miscCosts = MutableStateFlow<List<MiscCost>>(emptyList())
     val miscCosts: StateFlow<List<MiscCost>> = _miscCosts.asStateFlow()
 
@@ -23,7 +24,7 @@ class MiscCostsViewModel(private val periodId: String) : ViewModel() {
 
     init {
         viewModelScope.launch {
-            FirestoreService.getMiscCostsFlow(periodId).collect {
+            repository.getMiscCostsFlow(periodId).collect {
                 _miscCosts.value = it
             }
         }
@@ -34,7 +35,7 @@ class MiscCostsViewModel(private val periodId: String) : ViewModel() {
         val amountValue = NumberFormatter.parse(amount.value)
 
         if (desc.isNotBlank() && amountValue != null && amountValue > 0) {
-            FirestoreService.addMiscCost(desc, amountValue, periodId)
+            repository.addMiscCost(desc, amountValue, periodId)
             description.value = ""
             amount.value = ""
         }

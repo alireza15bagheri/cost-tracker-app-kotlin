@@ -24,6 +24,7 @@ import fr.alirezabagheri.simplecosttracker.ui.dashboard.DashboardScreen
 import fr.alirezabagheri.simplecosttracker.ui.income.IncomesScreen
 import fr.alirezabagheri.simplecosttracker.ui.misccost.MiscCostsScreen
 import fr.alirezabagheri.simplecosttracker.ui.period.PeriodsScreen
+import fr.alirezabagheri.simplecosttracker.ui.settings.ChangePasswordScreen
 import fr.alirezabagheri.simplecosttracker.ui.spending.DailySpendingsScreen
 import fr.alirezabagheri.simplecosttracker.ui.theme.SimpleCostTrackerTheme
 
@@ -47,6 +48,7 @@ sealed class Screen(val route: String) {
     object SignUpScreen : Screen("signup")
     object DashboardScreen : Screen("dashboard")
     object PeriodsScreen : Screen("periods")
+    object ChangePasswordScreen : Screen("changepassword")
     object IncomesScreen : Screen("incomes/{periodId}") {
         fun createRoute(periodId: String) = "incomes/$periodId"
     }
@@ -71,6 +73,7 @@ fun AppNavigation(auth: FirebaseAuth) {
         composable(Screen.SignUpScreen.route) { SignUpScreen(navController = navController, auth = auth) }
         composable(Screen.DashboardScreen.route) { DashboardScreen(navController = navController, auth = auth) }
         composable(Screen.PeriodsScreen.route) { PeriodsScreen(navController = navController) }
+        composable(Screen.ChangePasswordScreen.route) { ChangePasswordScreen(navController = navController) }
         composable(
             route = Screen.IncomesScreen.route,
             arguments = listOf(navArgument("periodId") { type = NavType.StringType })

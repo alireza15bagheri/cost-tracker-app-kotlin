@@ -4,13 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import fr.alirezabagheri.simplecosttracker.data.Budget
-import fr.alirezabagheri.simplecosttracker.data.FirestoreService
+import fr.alirezabagheri.simplecosttracker.data.CostTrackerRepository
 import fr.alirezabagheri.simplecosttracker.util.NumberFormatter
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class BudgetsViewModel(private val periodId: String) : ViewModel() {
 
+    private val repository = CostTrackerRepository()
     private val _budgets = MutableStateFlow<List<Budget>>(emptyList())
     val budgets: StateFlow<List<Budget>> = _budgets.asStateFlow()
 
@@ -23,7 +24,7 @@ class BudgetsViewModel(private val periodId: String) : ViewModel() {
 
     init {
         viewModelScope.launch {
-            FirestoreService.getBudgetsFlow(periodId).collect {
+            repository.getBudgetsFlow(periodId).collect {
                 _budgets.value = it
             }
         }
@@ -34,7 +35,7 @@ class BudgetsViewModel(private val periodId: String) : ViewModel() {
         val amountValue = NumberFormatter.parse(amount.value)
 
         if (cat.isNotBlank() && amountValue != null && amountValue > 0) {
-            FirestoreService.addBudget(cat, amountValue, periodId)
+            repository.addBudget(cat, amountValue, periodId)
             category.value = ""
             amount.value = ""
         }

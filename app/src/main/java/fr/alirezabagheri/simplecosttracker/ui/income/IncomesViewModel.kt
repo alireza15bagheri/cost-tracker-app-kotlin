@@ -3,7 +3,7 @@ package fr.alirezabagheri.simplecosttracker.ui.income
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import fr.alirezabagheri.simplecosttracker.data.FirestoreService
+import fr.alirezabagheri.simplecosttracker.data.CostTrackerRepository
 import fr.alirezabagheri.simplecosttracker.data.Income
 import fr.alirezabagheri.simplecosttracker.util.NumberFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 
 class IncomesViewModel(private val periodId: String) : ViewModel() {
 
+    private val repository = CostTrackerRepository()
     private val _incomes = MutableStateFlow<List<Income>>(emptyList())
     val incomes: StateFlow<List<Income>> = _incomes.asStateFlow()
 
@@ -28,7 +29,7 @@ class IncomesViewModel(private val periodId: String) : ViewModel() {
 
     init {
         viewModelScope.launch {
-            FirestoreService.getIncomesFlow(periodId).collect {
+            repository.getIncomesFlow(periodId).collect {
                 _incomes.value = it
             }
         }
@@ -36,10 +37,10 @@ class IncomesViewModel(private val periodId: String) : ViewModel() {
 
     fun addIncome() {
         val desc = description.value
-        val amountValue = NumberFormatter.parse(amount.value) // Use parser
+        val amountValue = NumberFormatter.parse(amount.value)
 
         if (desc.isNotBlank() && amountValue != null && amountValue > 0) {
-            FirestoreService.addIncome(desc, amountValue, periodId)
+            repository.addIncome(desc, amountValue, periodId)
             description.value = ""
             amount.value = ""
         }

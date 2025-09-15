@@ -3,6 +3,7 @@ package fr.alirezabagheri.simplecosttracker.ui.dashboard
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -33,241 +34,70 @@ fun DashboardScreen(
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-
-    val periods by viewModel.periods.collectAsState()
-    val activePeriod by viewModel.activePeriod.collectAsState()
-    val incomes by viewModel.activePeriodIncomes.collectAsState()
-    val totalIncomes by viewModel.totalIncomes.collectAsState()
-    val budgets by viewModel.activePeriodBudgets.collectAsState()
-    val totalBudgets by viewModel.totalBudgets.collectAsState()
-    val spendings by viewModel.activePeriodSpendings.collectAsState()
-    val totalPeriodSpending by viewModel.totalPeriodSpending.collectAsState()
-    val miscCosts by viewModel.activePeriodMiscCosts.collectAsState()
-    val totalMiscCosts by viewModel.totalMiscCosts.collectAsState()
-    val totalRemaining by viewModel.totalRemaining.collectAsState()
-    val notesInput by viewModel.notesInput.collectAsState()
-
-    var isDropdownExpanded by remember { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsState()
     val username = auth.currentUser?.email?.split("@")?.get(0) ?: "User"
     var showDeleteDialog by remember { mutableStateOf(false) }
     var itemToDelete by remember { mutableStateOf<Any?>(null) }
 
-    LaunchedEffect(activePeriod) {
-        viewModel.setNotesInput(activePeriod?.notes ?: "")
+    val onDeleteClick = { item: Any ->
+        itemToDelete = item
+        showDeleteDialog = true
     }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
-                Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
-                    Column {
-                        Spacer(Modifier.height(12.dp))
-                        NavigationDrawerItem(icon = { Icon(Icons.Default.DateRange, contentDescription = "Manage Periods") }, label = { Text("Manage Periods") }, selected = false, onClick = { scope.launch { drawerState.close() }; navController.navigate(Screen.PeriodsScreen.route) })
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                        val isDataManagementEnabled = activePeriod != null
-                        NavigationDrawerItem(icon = { Icon(Icons.Filled.TrendingUp, contentDescription = "Manage Incomes") }, label = { Text("Manage Incomes") }, selected = false, onClick = { if (isDataManagementEnabled) { activePeriod?.let { scope.launch { drawerState.close() }; navController.navigate(Screen.IncomesScreen.createRoute(it.id)) } } }, colors = if (isDataManagementEnabled) NavigationDrawerItemDefaults.colors() else NavigationDrawerItemDefaults.colors(unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f), unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)))
-                        NavigationDrawerItem(icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Manage Budgets") }, label = { Text("Manage Budgets") }, selected = false, onClick = { if (isDataManagementEnabled) { activePeriod?.let { scope.launch { drawerState.close() }; navController.navigate(Screen.BudgetsScreen.createRoute(it.id)) } } }, colors = if (isDataManagementEnabled) NavigationDrawerItemDefaults.colors() else NavigationDrawerItemDefaults.colors(unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f), unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)))
-                        NavigationDrawerItem(icon = { Icon(Icons.Default.Home, contentDescription = "Daily Spendings") }, label = { Text("Daily Spendings") }, selected = false, onClick = { if (isDataManagementEnabled) { activePeriod?.let { scope.launch { drawerState.close() }; navController.navigate(Screen.DailySpendingsScreen.createRoute(it.id)) } } }, colors = if (isDataManagementEnabled) NavigationDrawerItemDefaults.colors() else NavigationDrawerItemDefaults.colors(unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f), unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)))
-                        NavigationDrawerItem(icon = { Icon(Icons.Default.List, contentDescription = "Misc. Costs") }, label = { Text("Misc. Costs") }, selected = false, onClick = { if (isDataManagementEnabled) { activePeriod?.let { scope.launch { drawerState.close() }; navController.navigate(Screen.MiscCostsScreen.createRoute(it.id)) } } }, colors = if (isDataManagementEnabled) NavigationDrawerItemDefaults.colors() else NavigationDrawerItemDefaults.colors(unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f), unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)))
-                    }
-                    Column {
-                        NavigationDrawerItem(icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Sign Out") }, label = { Text("Sign Out") }, selected = false, onClick = { auth.signOut(); navController.navigate(Screen.LoginScreen.route) { popUpTo(navController.graph.startDestinationId) { inclusive = true } } })
-                        Spacer(Modifier.height(12.dp))
-                    }
-                }
-            }
+            DashboardDrawerContent(
+                navController = navController,
+                auth = auth,
+                activePeriod = uiState.activePeriod,
+                onCloseDrawer = { scope.launch { drawerState.close() } }
+            )
         }
     ) {
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Dashboard") }, navigationIcon = { IconButton(onClick = { scope.launch { drawerState.open() } }) { Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu") } }) }
+            topBar = {
+                TopAppBar(
+                    title = { Text("Dashboard") },
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                        }
+                    }
+                )
+            }
         ) { innerPadding ->
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Top section
                 item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "Welcome", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                        Text(text = username, style = MaterialTheme.typography.headlineSmall)
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                    ExposedDropdownMenuBox(expanded = isDropdownExpanded, onExpandedChange = { isDropdownExpanded = !isDropdownExpanded }) {
-                        OutlinedTextField(value = activePeriod?.name ?: "No Period Selected", onValueChange = {}, readOnly = true, label = { Text("Active Period") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) }, modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth())
-                        ExposedDropdownMenu(expanded = isDropdownExpanded, onDismissRequest = { isDropdownExpanded = false }) {
-                            periods.forEach { period ->
-                                DropdownMenuItem(text = { Text(period.name) }, onClick = { viewModel.setActivePeriod(period); isDropdownExpanded = false })
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    activePeriod?.let { period ->
-                        val dateFormatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "Start: ${period.startDate?.let { dateFormatter.format(it) } ?: "N/A"}", style = MaterialTheme.typography.bodyMedium)
-                            Text(text = "End: ${period.endDate?.let { dateFormatter.format(it) } ?: "N/A"}", style = MaterialTheme.typography.bodyMedium)
-                            IconButton(onClick = { itemToDelete = period; showDeleteDialog = true }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete Period", tint = MaterialTheme.colorScheme.error)
-                            }
-                        }
-                    }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-                }
-
-                // Incomes Section
-                item { Text(text = "Incomes", style = MaterialTheme.typography.titleLarge, modifier = Modifier.fillMaxWidth()) }
-                items(incomes) { income ->
-                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text(income.description, style = MaterialTheme.typography.bodyLarge)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(NumberFormatter.format(income.amount), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                                IconButton(onClick = { itemToDelete = income; showDeleteDialog = true }) { Icon(Icons.Default.Delete, contentDescription = "Delete Income") }
-                            }
-                        }
-                    }
-                }
-                item {
-                    if (incomes.isNotEmpty()) {
-                        Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-                            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text("Total Income", style = MaterialTheme.typography.titleMedium); Text(NumberFormatter.format(totalIncomes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-                // Budgets Section
-                item { Text(text = "Budgets", style = MaterialTheme.typography.titleLarge, modifier = Modifier.fillMaxWidth()) }
-                items(budgets) { budget ->
-                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text(budget.category, style = MaterialTheme.typography.bodyLarge)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(NumberFormatter.format(budget.allocatedAmount), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                                IconButton(onClick = { itemToDelete = budget; showDeleteDialog = true }) { Icon(Icons.Default.Delete, contentDescription = "Delete Budget") }
-                            }
-                        }
-                    }
-                }
-                item {
-                    if (budgets.isNotEmpty()) {
-                        Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
-                            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text("Total Budget", style = MaterialTheme.typography.titleMedium); Text(NumberFormatter.format(totalBudgets), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-                // Daily Spendings Section
-                item {
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "Daily House Spendings", style = MaterialTheme.typography.titleLarge)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(text = "(${NumberFormatter.format(totalPeriodSpending)})", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-                items(spendings) { spending ->
-                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text(SimpleDateFormat("EEE, dd MMM", Locale.getDefault()).format(spending.date), style = MaterialTheme.typography.bodyLarge)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(NumberFormatter.format(spending.spent), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                                IconButton(onClick = { itemToDelete = spending; showDeleteDialog = true }) { Icon(Icons.Default.Delete, contentDescription = "Delete Spending") }
-                            }
-                        }
-                    }
-                }
-                item {
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-                // Miscellaneous Costs Section
-                item {
-                    Text(text = "Miscellaneous Costs", style = MaterialTheme.typography.titleLarge, modifier = Modifier.fillMaxWidth())
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-                items(miscCosts) { cost ->
-                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text(cost.description, style = MaterialTheme.typography.bodyLarge)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(NumberFormatter.format(cost.amount), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                                IconButton(onClick = { itemToDelete = cost; showDeleteDialog = true }) { Icon(Icons.Default.Delete, contentDescription = "Delete Misc Cost") }
-                            }
-                        }
-                    }
-                }
-                item {
-                    if (miscCosts.isNotEmpty()) {
-                        Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-                            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text("Total Misc. Costs", style = MaterialTheme.typography.titleMedium)
-                                Text(NumberFormatter.format(totalMiscCosts), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-
-                // Notes Section
-                item {
-                    Text(text = "Notes", style = MaterialTheme.typography.titleLarge, modifier = Modifier.fillMaxWidth())
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = notesInput,
-                        onValueChange = { viewModel.setNotesInput(it) },
-                        modifier = Modifier.fillMaxWidth().height(150.dp),
-                        label = { Text("Write any notes for this period...") }
+                    TopSection(
+                        username = username,
+                        activePeriod = uiState.activePeriod,
+                        periods = uiState.periods,
+                        isDropdownExpanded = uiState.isDropdownExpanded,
+                        onExpandedChange = viewModel::onDropdownExpandedChange,
+                        onPeriodSelected = viewModel::setActivePeriod,
+                        onDeleteClick = onDeleteClick
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(
-                        onClick = {
-                            viewModel.saveNotes()
-                            Toast.makeText(context, "Notes saved!", Toast.LENGTH_SHORT).show()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Save Notes")
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                // Final Summary Card
-                item {
-                    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total Remaining", style = MaterialTheme.typography.titleMedium)
-                            Text(NumberFormatter.format(totalRemaining), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
+                incomesSection(incomes = uiState.incomes, totalIncomes = uiState.totalIncomes, onDeleteClick = onDeleteClick)
+                budgetsSection(budgets = uiState.budgets, totalBudgets = uiState.totalBudgets, onDeleteClick = onDeleteClick)
+                dailySpendingsSection(spendings = uiState.spendings, totalSpending = uiState.totalPeriodSpending, onDeleteClick = onDeleteClick)
+                miscCostsSection(miscCosts = uiState.miscCosts, totalMiscCosts = uiState.totalMiscCosts, onDeleteClick = onDeleteClick)
+                item { NotesSection(notes = uiState.notesInput, onNotesChange = viewModel::onNotesChange, onSaveClick = viewModel::saveNotes) }
+                item { FinalSummarySection(totalRemaining = uiState.totalRemaining) }
             }
         }
     }
 
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false; itemToDelete = null },
-            title = { Text("Confirm Deletion") },
-            text = {
-                when (itemToDelete) {
-                    is Income -> Text("Are you sure you want to delete this income?")
-                    is Budget -> Text("Are you sure you want to delete this budget?")
-                    is DailySpending -> Text("Are you sure you want to delete this spending entry?")
-                    is MiscCost -> Text("Are you sure you want to delete this cost?")
-                    is Period -> Text("Are you sure you want to delete this period and all its associated data?")
-                    else -> Text("Are you sure you want to delete this item?")
-                }
-            },
-            confirmButton = { Button(onClick = {
+        ConfirmationDialog(
+            itemToDelete = itemToDelete,
+            onDismiss = { showDeleteDialog = false; itemToDelete = null },
+            onConfirm = {
                 when (val item = itemToDelete) {
                     is Income -> viewModel.deleteIncome(item.id)
                     is Budget -> viewModel.deleteBudget(item.id)
@@ -275,9 +105,240 @@ fun DashboardScreen(
                     is MiscCost -> viewModel.deleteMiscCost(item.id)
                     is Period -> viewModel.deleteActivePeriod()
                 }
-                showDeleteDialog = false; itemToDelete = null
-            }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } },
-            dismissButton = { Button(onClick = { showDeleteDialog = false; itemToDelete = null }) { Text("Cancel") } }
+                showDeleteDialog = false
+                itemToDelete = null
+            }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TopSection(
+    username: String,
+    activePeriod: Period?,
+    periods: List<Period>,
+    isDropdownExpanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    onPeriodSelected: (Period?) -> Unit,
+    onDeleteClick: (Period) -> Unit
+) {
+    Spacer(modifier = Modifier.height(16.dp))
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = "Welcome", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+        Text(text = username, style = MaterialTheme.typography.headlineSmall)
+    }
+    Spacer(modifier = Modifier.height(24.dp))
+    ExposedDropdownMenuBox(expanded = isDropdownExpanded, onExpandedChange = onExpandedChange) {
+        OutlinedTextField(
+            value = activePeriod?.name ?: "No Period Selected",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Active Period") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
+            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+        )
+        ExposedDropdownMenu(expanded = isDropdownExpanded, onDismissRequest = { onExpandedChange(false) }) {
+            periods.forEach { period ->
+                DropdownMenuItem(text = { Text(period.name) }, onClick = { onPeriodSelected(period); onExpandedChange(false) })
+            }
+        }
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+    activePeriod?.let { period ->
+        val dateFormatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround, verticalAlignment = Alignment.CenterVertically) {
+            Text(text = "Start: ${period.startDate?.let { dateFormatter.format(it) } ?: "N/A"}", style = MaterialTheme.typography.bodyMedium)
+            Text(text = "End: ${period.endDate?.let { dateFormatter.format(it) } ?: "N/A"}", style = MaterialTheme.typography.bodyMedium)
+            IconButton(onClick = { onDeleteClick(period) }) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete Period", tint = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+}
+
+private fun LazyListScope.incomesSection(incomes: List<Income>, totalIncomes: Double, onDeleteClick: (Income) -> Unit) {
+    item { Text(text = "Incomes", style = MaterialTheme.typography.titleLarge, modifier = Modifier.fillMaxWidth()) }
+    items(incomes) { income ->
+        DeletableCard(
+            description = income.description,
+            amount = income.amount,
+            onDeleteClick = { onDeleteClick(income) }
+        )
+    }
+    item {
+        if (incomes.isNotEmpty()) {
+            TotalCard(label = "Total Income", total = totalIncomes, color = MaterialTheme.colorScheme.secondaryContainer)
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+private fun LazyListScope.budgetsSection(budgets: List<Budget>, totalBudgets: Double, onDeleteClick: (Budget) -> Unit) {
+    item { Text(text = "Budgets", style = MaterialTheme.typography.titleLarge, modifier = Modifier.fillMaxWidth()) }
+    items(budgets) { budget ->
+        DeletableCard(
+            description = budget.category,
+            amount = budget.allocatedAmount,
+            onDeleteClick = { onDeleteClick(budget) }
+        )
+    }
+    item {
+        if (budgets.isNotEmpty()) {
+            TotalCard(label = "Total Budget", total = totalBudgets, color = MaterialTheme.colorScheme.tertiaryContainer)
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+private fun LazyListScope.dailySpendingsSection(spendings: List<DailySpending>, totalSpending: Double, onDeleteClick: (DailySpending) -> Unit) {
+    item {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(text = "Daily House Spendings", style = MaterialTheme.typography.titleLarge)
+            Spacer(modifier = Modifier.weight(1f))
+            Text(text = "(${NumberFormatter.format(totalSpending)})", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+    items(spendings) { spending ->
+        DeletableCard(
+            description = SimpleDateFormat("EEE, dd MMM", Locale.getDefault()).format(spending.date),
+            amount = spending.spent,
+            onDeleteClick = { onDeleteClick(spending) }
+        )
+    }
+    item { Spacer(modifier = Modifier.height(24.dp)) }
+}
+
+private fun LazyListScope.miscCostsSection(miscCosts: List<MiscCost>, totalMiscCosts: Double, onDeleteClick: (MiscCost) -> Unit) {
+    item { Text(text = "Miscellaneous Costs", style = MaterialTheme.typography.titleLarge, modifier = Modifier.fillMaxWidth()) }
+    items(miscCosts) { cost ->
+        DeletableCard(
+            description = cost.description,
+            amount = cost.amount,
+            onDeleteClick = { onDeleteClick(cost) }
+        )
+    }
+    item {
+        if (miscCosts.isNotEmpty()) {
+            TotalCard(label = "Total Misc. Costs", total = totalMiscCosts, color = MaterialTheme.colorScheme.secondaryContainer)
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun NotesSection(notes: String, onNotesChange: (String) -> Unit, onSaveClick: () -> Unit) {
+    val context = LocalContext.current
+    Text(text = "Notes", style = MaterialTheme.typography.titleLarge, modifier = Modifier.fillMaxWidth())
+    Spacer(modifier = Modifier.height(8.dp))
+    OutlinedTextField(
+        value = notes,
+        onValueChange = onNotesChange,
+        modifier = Modifier.fillMaxWidth().height(150.dp),
+        label = { Text("Write any notes for this period...") }
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    Button(
+        onClick = {
+            onSaveClick()
+            Toast.makeText(context, "Notes saved!", Toast.LENGTH_SHORT).show()
+        },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text("Save Notes")
+    }
+    Spacer(modifier = Modifier.height(24.dp))
+}
+
+@Composable
+private fun FinalSummarySection(totalRemaining: Double) {
+    Card(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Total Remaining", style = MaterialTheme.typography.titleMedium)
+            Text(NumberFormatter.format(totalRemaining), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun DashboardDrawerContent(
+    navController: NavController,
+    auth: FirebaseAuth,
+    activePeriod: Period?,
+    onCloseDrawer: () -> Unit
+) {
+    ModalDrawerSheet {
+        Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
+            Column {
+                Spacer(Modifier.height(12.dp))
+                NavigationDrawerItem(icon = { Icon(Icons.Default.DateRange, contentDescription = "Manage Periods") }, label = { Text("Manage Periods") }, selected = false, onClick = { onCloseDrawer(); navController.navigate(Screen.PeriodsScreen.route) })
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                val isDataManagementEnabled = activePeriod != null
+                val colors = if (isDataManagementEnabled) NavigationDrawerItemDefaults.colors() else NavigationDrawerItemDefaults.colors(unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f), unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
+                val onNavigate: (String) -> Unit = { route ->
+                    if (isDataManagementEnabled) {
+                        onCloseDrawer()
+                        navController.navigate(route)
+                    }
+                }
+
+                NavigationDrawerItem(icon = { Icon(Icons.Filled.TrendingUp, contentDescription = "Manage Incomes") }, label = { Text("Manage Incomes") }, selected = false, onClick = { activePeriod?.id?.let { onNavigate(Screen.IncomesScreen.createRoute(it)) } }, colors = colors)
+                NavigationDrawerItem(icon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = "Manage Budgets") }, label = { Text("Manage Budgets") }, selected = false, onClick = { activePeriod?.id?.let { onNavigate(Screen.BudgetsScreen.createRoute(it)) } }, colors = colors)
+                NavigationDrawerItem(icon = { Icon(Icons.Default.Home, contentDescription = "Daily Spendings") }, label = { Text("Daily Spendings") }, selected = false, onClick = { activePeriod?.id?.let { onNavigate(Screen.DailySpendingsScreen.createRoute(it)) } }, colors = colors)
+                NavigationDrawerItem(icon = { Icon(Icons.Default.List, contentDescription = "Misc. Costs") }, label = { Text("Misc. Costs") }, selected = false, onClick = { activePeriod?.id?.let { onNavigate(Screen.MiscCostsScreen.createRoute(it)) } }, colors = colors)
+            }
+            Column {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                NavigationDrawerItem(icon = { Icon(Icons.Default.Lock, contentDescription = "Change Password") }, label = { Text("Change Password") }, selected = false, onClick = { onCloseDrawer(); navController.navigate(Screen.ChangePasswordScreen.route) })
+                NavigationDrawerItem(icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Sign Out") }, label = { Text("Sign Out") }, selected = false, onClick = { onCloseDrawer(); auth.signOut(); navController.navigate(Screen.LoginScreen.route) { popUpTo(navController.graph.startDestinationId) { inclusive = true } } })
+                Spacer(Modifier.height(12.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConfirmationDialog(itemToDelete: Any?, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Confirm Deletion") },
+        text = {
+            val text = when (itemToDelete) {
+                is Income -> "Are you sure you want to delete this income?"
+                is Budget -> "Are you sure you want to delete this budget?"
+                is DailySpending -> "Are you sure you want to delete this spending entry?"
+                is MiscCost -> "Are you sure you want to delete this cost?"
+                is Period -> "Are you sure you want to delete this period and all its associated data?"
+                else -> "Are you sure you want to delete this item?"
+            } + "\nThis action cannot be undone."
+            Text(text)
+        },
+        confirmButton = { Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text("Delete") } },
+        dismissButton = { Button(onClick = onDismiss) { Text("Cancel") } }
+    )
+}
+
+@Composable
+private fun DeletableCard(description: String, amount: Double, onDeleteClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(description, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(NumberFormatter.format(amount), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                IconButton(onClick = onDeleteClick) { Icon(Icons.Default.Delete, contentDescription = "Delete") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TotalCard(label: String, total: Double, color: androidx.compose.ui.graphics.Color) {
+    Card(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), colors = CardDefaults.cardColors(containerColor = color)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = MaterialTheme.typography.titleMedium)
+            Text(NumberFormatter.format(total), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        }
     }
 }

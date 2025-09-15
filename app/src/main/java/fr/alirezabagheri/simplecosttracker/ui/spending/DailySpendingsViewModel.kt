@@ -3,18 +3,18 @@ package fr.alirezabagheri.simplecosttracker.ui.spending
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import fr.alirezabagheri.simplecosttracker.data.CostTrackerRepository
 import fr.alirezabagheri.simplecosttracker.data.DailySpending
-import fr.alirezabagheri.simplecosttracker.data.FirestoreService
 import fr.alirezabagheri.simplecosttracker.data.Period
 import fr.alirezabagheri.simplecosttracker.util.NumberFormatter
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date
-import java.util.concurrent.TimeUnit
 
 class DailySpendingsViewModel(private val periodId: String) : ViewModel() {
 
+    private val repository = CostTrackerRepository()
     private val _period = MutableStateFlow<Period?>(null)
     val period: StateFlow<Period?> = _period.asStateFlow()
 
@@ -26,12 +26,12 @@ class DailySpendingsViewModel(private val periodId: String) : ViewModel() {
 
     init {
         viewModelScope.launch {
-            FirestoreService.getPeriodsFlow().map { periods -> periods.find { it.id == periodId } }.collect {
+            repository.getPeriodsFlow().map { periods -> periods.find { it.id == periodId } }.collect {
                 _period.value = it
             }
         }
         viewModelScope.launch {
-            FirestoreService.getDailySpendingsFlow(periodId).collect {
+            repository.getDailySpendingsFlow(periodId).collect {
                 _spendings.value = it
             }
         }
@@ -40,13 +40,13 @@ class DailySpendingsViewModel(private val periodId: String) : ViewModel() {
     fun updateSpendingLimit(limit: String) {
         val limitValue = NumberFormatter.parse(limit) ?: 0.0
         _period.value?.id?.let {
-            FirestoreService.updatePeriodSpendingLimit(it, limitValue)
+            repository.updatePeriodSpendingLimit(it, limitValue)
         }
     }
 
     fun addOrUpdateSpending(item: DailySpendingItem, spent: String) {
         val spentValue = NumberFormatter.parse(spent) ?: 0.0
-        FirestoreService.addOrUpdateDailySpending(item.id, item.date, spentValue, periodId)
+        repository.addOrUpdateDailySpending(item.id, item.date, spentValue, periodId)
     }
 
     private fun calculateSpendings(period: Period?, spendings: List<DailySpending>): List<DailySpendingItem> {

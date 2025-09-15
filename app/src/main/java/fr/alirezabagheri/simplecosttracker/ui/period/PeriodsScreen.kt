@@ -4,18 +4,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,8 +25,6 @@ fun PeriodsScreen(
 ) {
     val periods by viewModel.periods.collectAsState()
     val periodName by viewModel.periodName.collectAsState()
-    val startDate by viewModel.startDate.collectAsState()
-    val endDate by viewModel.endDate.collectAsState()
 
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
@@ -37,7 +35,7 @@ fun PeriodsScreen(
                 title = { Text("Manage Periods") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -59,10 +57,12 @@ fun PeriodsScreen(
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
                 Button(onClick = { showStartDatePicker = true }) {
-                    Text(text = startDate?.let { SimpleDateFormat("dd MMM yyyy", Locale.US).format(it) } ?: "Start Date")
+                    val date = viewModel.startDatePickerState.selectedDateMillis?.let { Date(it) }
+                    Text(text = date?.let { SimpleDateFormat("dd MMM yyyy", Locale.US).format(it) } ?: "Start Date")
                 }
                 Button(onClick = { showEndDatePicker = true }) {
-                    Text(text = endDate?.let { SimpleDateFormat("dd MMM yyyy", Locale.US).format(it) } ?: "End Date")
+                    val date = viewModel.endDatePickerState.selectedDateMillis?.let { Date(it) }
+                    Text(text = date?.let { SimpleDateFormat("dd MMM yyyy", Locale.US).format(it) } ?: "End Date")
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -71,9 +71,37 @@ fun PeriodsScreen(
             }
             Spacer(modifier = Modifier.height(24.dp))
             HorizontalDivider()
-            LazyColumn {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 items(periods) { period ->
-                    Text("${period.name} (${SimpleDateFormat("dd MMM", Locale.US).format(period.startDate!!)} - ${SimpleDateFormat("dd MMM", Locale.US).format(period.endDate!!)})")
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = period.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            val startDateText = period.startDate?.let { SimpleDateFormat("dd MMM", Locale.US).format(it) } ?: ""
+                            val endDateText = period.endDate?.let { SimpleDateFormat("dd MMM", Locale.US).format(it) } ?: ""
+                            Text(
+                                text = "$startDateText - $endDateText",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -85,7 +113,7 @@ fun PeriodsScreen(
             confirmButton = {
                 Button(onClick = { showStartDatePicker = false }) { Text("OK") }
             }) {
-            DatePicker(onDateSelected = { viewModel.startDate.value = it })
+            DatePicker(state = viewModel.startDatePickerState)
         }
     }
 
@@ -95,23 +123,7 @@ fun PeriodsScreen(
             confirmButton = {
                 Button(onClick = { showEndDatePicker = false }) { Text("OK") }
             }) {
-            DatePicker(onDateSelected = { viewModel.endDate.value = it })
+            DatePicker(state = viewModel.endDatePickerState)
         }
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DatePicker(onDateSelected: (Date) -> Unit) {
-    val calendar = Calendar.getInstance()
-    val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = calendar.timeInMillis
-    )
-    LaunchedEffect(datePickerState.selectedDateMillis) {
-        datePickerState.selectedDateMillis?.let {
-            calendar.timeInMillis = it
-            onDateSelected(calendar.time)
-        }
-    }
-    DatePicker(state = datePickerState)
 }
