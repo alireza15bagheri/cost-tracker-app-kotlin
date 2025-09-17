@@ -1,7 +1,9 @@
 package fr.alirezabagheri.simplecosttracker.ui.auth
 
+import android.app.Activity
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -21,6 +23,17 @@ fun LoginScreen(navController: NavController, auth: FirebaseAuth) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val context = LocalContext.current
+    var backPressedTime by remember { mutableStateOf(0L) }
+
+    // Intercepts the back button press on this screen
+    BackHandler(enabled = true) {
+        if (backPressedTime + 2000 > System.currentTimeMillis()) {
+            (context as? Activity)?.finish()
+        } else {
+            Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
+        }
+        backPressedTime = System.currentTimeMillis()
+    }
 
     Column(
         modifier = Modifier
@@ -59,7 +72,6 @@ fun LoginScreen(navController: NavController, auth: FirebaseAuth) {
                             if (task.isSuccessful) {
                                 Toast.makeText(context, "Login Successful!", Toast.LENGTH_SHORT).show()
                                 navController.navigate(Screen.DashboardScreen.route) {
-                                    // Clear back stack to prevent user from going back to login screen
                                     popUpTo(Screen.LoginScreen.route) { inclusive = true }
                                 }
                             } else {
