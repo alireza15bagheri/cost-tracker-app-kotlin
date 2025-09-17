@@ -33,46 +33,46 @@ class DashboardViewModel : ViewModel() {
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     init {
-        // This flow listens for changes in the list of all periods
         viewModelScope.launch {
-            repository.getPeriodsFlow().collect { periods ->
-                _uiState.update { it.copy(periods = periods) }
-                // If there's no active period or the active one was deleted, select the first available
-                if (_activePeriodId.value == null || periods.none { it.id == _activePeriodId.value }) {
-                    setActivePeriod(periods.firstOrNull())
+            // Combine the full list of periods and the selected period ID to derive the UI state
+            repository.getPeriodsFlow().combine(_activePeriodId) { periods, activeId ->
+                // Determine the currently active ID. If none is selected or the selected one is invalid,
+                // default to the first period in the list.
+                val currentActiveId = if (activeId == null || periods.none { it.id == activeId }) {
+                    periods.firstOrNull()?.id
+                } else {
+                    activeId
                 }
-            }
-        }
-
-        // This flow listens to the active period ID and fetches all related data when it changes
-        viewModelScope.launch {
-            _activePeriodId.flatMapLatest { id ->
-                if (id == null) {
-                    // If no period is selected, flow empty data
-                    flowOf(DashboardUiState(periods = _uiState.value.periods))
+                // Pass the full list and the definitive active ID to the next step
+                Pair(periods, currentActiveId)
+            }.flatMapLatest { (periods, activeId) ->
+                // If there's an active ID, fetch all related data. Otherwise, flow a default state.
+                if (activeId == null) {
+                    flowOf(DashboardUiState(periods = periods))
                 } else {
                     // When an ID is available, combine all data sources for that period
                     combine(
-                        repository.getPeriodsFlow().map { it.find { p -> p.id == id } },
-                        repository.getIncomesFlow(id),
-                        repository.getBudgetsFlow(id),
-                        repository.getDailySpendingsFlow(id),
-                        repository.getMiscCostsFlow(id)
-                    ) { period, incomes, budgets, spendings, miscCosts ->
+                        repository.getIncomesFlow(activeId),
+                        repository.getBudgetsFlow(activeId),
+                        repository.getDailySpendingsFlow(activeId),
+                        repository.getMiscCostsFlow(activeId)
+                    ) { incomes, budgets, spendings, miscCosts ->
                         // Perform all calculations here
+                        val activePeriod = periods.find { it.id == activeId }
                         val totalIncomes = incomes.sumOf { it.amount }
                         val totalBudgets = budgets.sumOf { it.allocatedAmount }
-                        val totalPeriodSpending = if (period?.startDate != null && period.endDate != null) {
-                            val diff = period.endDate.time - period.startDate.time
+                        val totalPeriodSpending = if (activePeriod?.startDate != null && activePeriod.endDate != null) {
+                            val diff = activePeriod.endDate.time - activePeriod.startDate.time
                             val days = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS) + 1
-                            days * period.dailySpendingLimit
+                            days * activePeriod.dailySpendingLimit
                         } else 0.0
                         val totalMiscCosts = miscCosts.sumOf { it.amount }
                         val totalRemaining = totalIncomes - totalBudgets - totalPeriodSpending - totalMiscCosts
 
-                        // Update the single state object
-                        _uiState.value.copy(
-                            activePeriod = period,
+                        // Create the new, complete state object from scratch
+                        DashboardUiState(
+                            periods = periods,
+                            activePeriod = activePeriod,
                             incomes = incomes,
                             totalIncomes = totalIncomes,
                             budgets = budgets,
@@ -82,12 +82,12 @@ class DashboardViewModel : ViewModel() {
                             miscCosts = miscCosts,
                             totalMiscCosts = totalMiscCosts,
                             totalRemaining = totalRemaining,
-                            notesInput = period?.notes ?: ""
+                            notesInput = activePeriod?.notes ?: ""
                         )
                     }
                 }
             }.collect { newState ->
-                // Emit the new comprehensive state
+                // This is now the single point where the UI state is updated
                 _uiState.value = newState
             }
         }
@@ -112,6 +112,10 @@ class DashboardViewModel : ViewModel() {
         _activePeriodId.value = period?.id
     }
 
+    fun toggleBudgetPaidStatus(budget: Budget) {
+        repository.updateBudgetPaidStatus(budget.id, !budget.isPaid)
+    }
+
     fun deleteIncome(incomeId: String) { repository.deleteIncome(incomeId) }
     fun deleteBudget(budgetId: String) { repository.deleteBudget(budgetId) }
     fun deleteDailySpending(spendingId: String) { repository.deleteDailySpending(spendingId) }
@@ -121,7 +125,7 @@ class DashboardViewModel : ViewModel() {
         viewModelScope.launch {
             _activePeriodId.value?.let { periodId ->
                 repository.deletePeriodAndAssociatedData(periodId)
-                // The main collector will handle selecting a new period
+                // The main collector will automatically handle selecting a new period
             }
         }
     }

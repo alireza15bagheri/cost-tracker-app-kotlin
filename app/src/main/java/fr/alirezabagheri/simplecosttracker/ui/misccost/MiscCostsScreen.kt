@@ -13,11 +13,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import fr.alirezabagheri.simplecosttracker.R
 import fr.alirezabagheri.simplecosttracker.util.NumberFormatter
 import fr.alirezabagheri.simplecosttracker.util.NumberVisualTransformation
 import java.text.SimpleDateFormat
@@ -38,10 +40,10 @@ fun MiscCostsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Manage Miscellaneous Costs") },
+                title = { Text(stringResource(id = R.string.manage_misc_costs)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back))
                     }
                 }
             )
@@ -58,14 +60,14 @@ fun MiscCostsScreen(
             OutlinedTextField(
                 value = description,
                 onValueChange = { viewModel.description.value = it },
-                label = { Text("Cost Description") },
+                label = { Text(stringResource(id = R.string.cost_description)) },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = amount,
                 onValueChange = { viewModel.amount.value = it.filter { char -> char.isDigit() || char == '.' } },
-                label = { Text("Amount") },
+                label = { Text(stringResource(id = R.string.amount)) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = NumberVisualTransformation()
@@ -75,9 +77,9 @@ fun MiscCostsScreen(
                 onClick = { viewModel.addMiscCost() },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Cost")
+                Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.add_cost))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Cost")
+                Text(stringResource(id = R.string.add_cost))
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -136,7 +138,7 @@ fun MiscCostsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Total Misc. Costs", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(id = R.string.total_misc_costs), style = MaterialTheme.typography.titleMedium)
                     Text(
                         NumberFormatter.format(totalMiscCosts),
                         style = MaterialTheme.typography.titleMedium,

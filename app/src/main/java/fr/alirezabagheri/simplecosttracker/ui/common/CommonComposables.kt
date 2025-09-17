@@ -11,8 +11,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import fr.alirezabagheri.simplecosttracker.R
 import fr.alirezabagheri.simplecosttracker.util.NumberFormatter
 
 @Composable
@@ -26,7 +28,7 @@ fun DeletableCard(description: String, amount: Double, onDeleteClick: () -> Unit
             Text(description, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(NumberFormatter.format(amount), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
-                IconButton(onClick = onDeleteClick) { Icon(Icons.Default.Delete, contentDescription = "Delete") }
+                IconButton(onClick = onDeleteClick) { Icon(Icons.Default.Delete, contentDescription = stringResource(id = R.string.delete)) }
             }
         }
     }

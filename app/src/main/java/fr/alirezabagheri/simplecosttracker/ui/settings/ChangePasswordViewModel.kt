@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import fr.alirezabagheri.simplecosttracker.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -22,11 +23,11 @@ class ChangePasswordViewModel : ViewModel() {
 
     fun changePassword() {
         if (newPassword.value != confirmPassword.value) {
-            _uiState.value = ChangePasswordState.Error("New passwords do not match.")
+            _uiState.value = ChangePasswordState.Error("New passwords do not match.") // This would ideally be a resource ID
             return
         }
         if (newPassword.value.length < 6) {
-            _uiState.value = ChangePasswordState.Error("Password must be at least 6 characters.")
+            _uiState.value = ChangePasswordState.Error("Password must be at least 6 characters.") // This would also be a resource ID
             return
         }
 

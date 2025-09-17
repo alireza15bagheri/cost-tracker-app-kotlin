@@ -19,6 +19,12 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep all Firebase related classes
 -keep class com.google.firebase.** { *; }
 -keepattributes Signature
 -dontwarn com.google.firebase.**
+
+# ADD THIS RULE: Keep all data model classes that Firestore uses for serialization.
+# This prevents them from being removed or renamed by R8/ProGuard.
+-keep class fr.alirezabagheri.simplecosttracker.data.** { *; }

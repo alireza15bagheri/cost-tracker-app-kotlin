@@ -5,29 +5,20 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
-import fr.alirezabagheri.simplecosttracker.Screen
+import fr.alirezabagheri.simplecosttracker.R
 import fr.alirezabagheri.simplecosttracker.data.*
-import fr.alirezabagheri.simplecosttracker.ui.common.DeletableCard
-import fr.alirezabagheri.simplecosttracker.ui.common.TotalCard
-import fr.alirezabagheri.simplecosttracker.util.NumberFormatter
-import java.text.SimpleDateFormat
-import java.util.Locale
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,7 +47,7 @@ fun DashboardScreen(
         if (backPressedTime + 2000 > System.currentTimeMillis()) {
             (context as? Activity)?.finish()
         } else {
-            Toast.makeText(context, "Press back again to exit", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.press_back_again_to_exit), Toast.LENGTH_SHORT).show()
         }
         backPressedTime = System.currentTimeMillis()
     }
@@ -75,10 +66,10 @@ fun DashboardScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Dashboard") },
+                    title = { Text(stringResource(id = R.string.dashboard)) },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+                            Icon(imageVector = Icons.Filled.Menu, contentDescription = stringResource(id = R.string.menu))
                         }
                     }
                 )
@@ -101,7 +92,12 @@ fun DashboardScreen(
                 }
 
                 incomesSection(incomes = uiState.incomes, totalIncomes = uiState.totalIncomes, onDeleteClick = onDeleteClick)
-                budgetsSection(budgets = uiState.budgets, totalBudgets = uiState.totalBudgets, onDeleteClick = onDeleteClick)
+                budgetsSection(
+                    budgets = uiState.budgets,
+                    totalBudgets = uiState.totalBudgets,
+                    onDeleteClick = onDeleteClick,
+                    onTogglePaidStatus = viewModel::toggleBudgetPaidStatus
+                )
                 dailySpendingsSection(spendings = uiState.spendings, totalSpending = uiState.totalPeriodSpending, onDeleteClick = onDeleteClick)
                 miscCostsSection(miscCosts = uiState.miscCosts, totalMiscCosts = uiState.totalMiscCosts, onDeleteClick = onDeleteClick)
                 item { NotesSection(notes = uiState.notesInput, onNotesChange = viewModel::onNotesChange, onSaveClick = viewModel::saveNotes) }

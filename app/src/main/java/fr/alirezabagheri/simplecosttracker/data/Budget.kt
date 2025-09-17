@@ -6,5 +6,7 @@ data class Budget(
     @DocumentId val id: String = "",
     val periodId: String = "",
     val category: String = "",
-    val allocatedAmount: Double = 0.0
+    val allocatedAmount: Double = 0.0,
+    @JvmField
+    var isPaid: Boolean = false
 )

@@ -1,14 +1,16 @@
 package fr.alirezabagheri.simplecosttracker
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.core.os.LocaleListCompat
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,7 +30,7 @@ import fr.alirezabagheri.simplecosttracker.ui.settings.ChangePasswordScreen
 import fr.alirezabagheri.simplecosttracker.ui.spending.DailySpendingsScreen
 import fr.alirezabagheri.simplecosttracker.ui.theme.SimpleCostTrackerTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     private val auth: FirebaseAuth by lazy { Firebase.auth }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,10 +38,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             SimpleCostTrackerTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    AppNavigation(auth)
+                    AppNavigation(auth = auth, setLocale = ::setLocale)
                 }
             }
         }
+    }
+
+    private fun setLocale(lang: String) {
+        val appLocale = LocaleListCompat.forLanguageTags(lang)
+        AppCompatDelegate.setApplicationLocales(appLocale)
+        recreate() // Recreate the activity to apply the new locale
     }
 }
 
@@ -64,12 +72,12 @@ sealed class Screen(val route: String) {
 }
 
 @Composable
-fun AppNavigation(auth: FirebaseAuth) {
+fun AppNavigation(auth: FirebaseAuth, setLocale: (String) -> Unit) {
     val navController = rememberNavController()
     val startDestination = if (auth.currentUser != null) Screen.DashboardScreen.route else Screen.LoginScreen.route
 
     NavHost(navController = navController, startDestination = startDestination) {
-        composable(Screen.LoginScreen.route) { LoginScreen(navController = navController, auth = auth) }
+        composable(Screen.LoginScreen.route) { LoginScreen(navController = navController, auth = auth, setLocale = setLocale) }
         composable(Screen.SignUpScreen.route) { SignUpScreen(navController = navController, auth = auth) }
         composable(Screen.DashboardScreen.route) { DashboardScreen(navController = navController, auth = auth) }
         composable(Screen.PeriodsScreen.route) { PeriodsScreen(navController = navController) }

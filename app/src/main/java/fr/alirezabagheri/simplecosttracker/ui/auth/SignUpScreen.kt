@@ -9,11 +9,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
+import fr.alirezabagheri.simplecosttracker.R
 
 @Composable
 fun SignUpScreen(navController: NavController, auth: FirebaseAuth) {
@@ -28,13 +30,13 @@ fun SignUpScreen(navController: NavController, auth: FirebaseAuth) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Create an Account", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.create_account), style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email") },
+            label = { Text(stringResource(R.string.email)) },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
         )
@@ -43,7 +45,7 @@ fun SignUpScreen(navController: NavController, auth: FirebaseAuth) {
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password (min. 6 characters)") },
+            label = { Text(stringResource(R.string.password_min_chars)) },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             visualTransformation = PasswordVisualTransformation()
@@ -56,24 +58,25 @@ fun SignUpScreen(navController: NavController, auth: FirebaseAuth) {
                     auth.createUserWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                Toast.makeText(context, "Sign Up Successful! Please log in.", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, context.getString(R.string.signup_successful), Toast.LENGTH_LONG).show()
                                 navController.popBackStack() // Go back to the login screen
                             } else {
                                 Log.w("Auth", "createUserWithEmail:failure", task.exception)
-                                Toast.makeText(context, "Authentication failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                                val errorMessage = task.exception?.message ?: ""
+                                Toast.makeText(context, context.getString(R.string.authentication_failed, errorMessage), Toast.LENGTH_LONG).show()
                             }
                         }
                 } else {
-                    Toast.makeText(context, "Please fill in all fields.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.fill_in_all_fields), Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Sign Up")
+            Text(stringResource(R.string.signup))
         }
 
         TextButton(onClick = { navController.popBackStack() }) {
-            Text("Already have an account? Login")
+            Text(stringResource(R.string.have_account_login))
         }
     }
 }

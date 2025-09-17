@@ -13,11 +13,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import fr.alirezabagheri.simplecosttracker.R
 import fr.alirezabagheri.simplecosttracker.util.NumberFormatter
 import fr.alirezabagheri.simplecosttracker.util.NumberVisualTransformation
 
@@ -36,10 +38,10 @@ fun BudgetsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Manage Budgets") },
+                title = { Text(stringResource(id = R.string.manage_budgets)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back))
                     }
                 }
             )
@@ -56,14 +58,14 @@ fun BudgetsScreen(
             OutlinedTextField(
                 value = category,
                 onValueChange = { viewModel.category.value = it },
-                label = { Text("Budget Category (e.g., Groceries)") },
+                label = { Text(stringResource(id = R.string.budget_category)) },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = amount,
                 onValueChange = { viewModel.amount.value = it.filter { char -> char.isDigit() || char == '.' } },
-                label = { Text("Allocated Amount") },
+                label = { Text(stringResource(id = R.string.allocated_amount)) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 visualTransformation = NumberVisualTransformation()
@@ -73,9 +75,9 @@ fun BudgetsScreen(
                 onClick = { viewModel.addBudget() },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Budget")
+                Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.add_budget))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Budget")
+                Text(stringResource(id = R.string.add_budget))
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -124,7 +126,7 @@ fun BudgetsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Total Budget", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(id = R.string.total_budget), style = MaterialTheme.typography.titleMedium)
                     Text(
                         NumberFormatter.format(totalBudgets),
                         style = MaterialTheme.typography.titleMedium,

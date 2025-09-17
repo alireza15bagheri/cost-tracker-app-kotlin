@@ -35,6 +35,9 @@ class CostTrackerRepository {
 
     fun deleteBudget(budgetId: String) = FirestoreService.deleteBudget(budgetId)
 
+    fun updateBudgetPaidStatus(budgetId: String, isPaid: Boolean) =
+        FirestoreService.updateBudgetPaidStatus(budgetId, isPaid)
+
     fun addOrUpdateDailySpending(spendingId: String?, date: Date, spent: Double, periodId: String) =
         FirestoreService.addOrUpdateDailySpending(spendingId, date, spent, periodId)
 

@@ -10,11 +10,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import fr.alirezabagheri.simplecosttracker.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,7 +33,7 @@ fun ChangePasswordScreen(
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is ChangePasswordState.Success -> {
-                Toast.makeText(context, "Password updated successfully!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.password_update_success), Toast.LENGTH_SHORT).show()
                 navController.popBackStack()
                 viewModel.resetState()
             }
@@ -46,10 +48,10 @@ fun ChangePasswordScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Change Password") },
+                title = { Text(stringResource(id = R.string.change_password)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back))
                     }
                 }
             )
@@ -65,7 +67,7 @@ fun ChangePasswordScreen(
             OutlinedTextField(
                 value = currentPassword,
                 onValueChange = { viewModel.currentPassword.value = it },
-                label = { Text("Current Password") },
+                label = { Text(stringResource(id = R.string.current_password)) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = PasswordVisualTransformation()
@@ -74,7 +76,7 @@ fun ChangePasswordScreen(
             OutlinedTextField(
                 value = newPassword,
                 onValueChange = { viewModel.newPassword.value = it },
-                label = { Text("New Password") },
+                label = { Text(stringResource(id = R.string.new_password)) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = PasswordVisualTransformation()
@@ -83,7 +85,7 @@ fun ChangePasswordScreen(
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { viewModel.confirmPassword.value = it },
-                label = { Text("Confirm New Password") },
+                label = { Text(stringResource(id = R.string.confirm_new_password)) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = PasswordVisualTransformation()
@@ -97,7 +99,7 @@ fun ChangePasswordScreen(
                 if (uiState == ChangePasswordState.Loading) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Change Password")
+                    Text(stringResource(id = R.string.change_password))
                 }
             }
         }

@@ -10,12 +10,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import fr.alirezabagheri.simplecosttracker.R
 import fr.alirezabagheri.simplecosttracker.util.NumberFormatter
 import fr.alirezabagheri.simplecosttracker.util.NumberVisualTransformation
 import java.text.SimpleDateFormat
@@ -36,10 +38,10 @@ fun DailySpendingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Daily Spendings") },
+                title = { Text(stringResource(id = R.string.daily_spending)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back))
                     }
                 }
             )
@@ -55,14 +57,14 @@ fun DailySpendingsScreen(
                 OutlinedTextField(
                     value = limitInput,
                     onValueChange = { limitInput = it.filter { char -> char.isDigit() || char == '.' } },
-                    label = { Text("Daily Spending Limit") },
+                    label = { Text(stringResource(id = R.string.daily_spending_limit)) },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     visualTransformation = NumberVisualTransformation()
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(onClick = { viewModel.updateSpendingLimit(limitInput) }) {
-                    Text("Set")
+                    Text(stringResource(id = R.string.set))
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -90,9 +92,9 @@ fun SpendingRow(item: DailySpendingItem, onSpentChange: (String) -> Unit) {
     ) {
         Column(modifier = Modifier.weight(1.5f)) {
             Text(dateFormatter.format(item.date), fontWeight = FontWeight.Bold)
-            Text("Limit: ${NumberFormatter.format(item.limit)}", fontSize = 12.sp)
-            Text("Carryover: ${NumberFormatter.format(item.carryover)}", fontSize = 12.sp)
-            Text("Remaining: ${NumberFormatter.format(item.remaining)}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(id = R.string.limit, NumberFormatter.format(item.limit)), fontSize = 12.sp)
+            Text(stringResource(id = R.string.carryover, NumberFormatter.format(item.carryover)), fontSize = 12.sp)
+            Text(stringResource(id = R.string.remaining, NumberFormatter.format(item.remaining)), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
         }
         OutlinedTextField(
             value = spentInput,
@@ -100,7 +102,7 @@ fun SpendingRow(item: DailySpendingItem, onSpentChange: (String) -> Unit) {
                 spentInput = it.filter { char -> char.isDigit() || char == '.' }
                 onSpentChange(spentInput)
             },
-            label = { Text("Spent") },
+            label = { Text(stringResource(id = R.string.spent)) },
             modifier = Modifier.weight(1f),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             visualTransformation = NumberVisualTransformation()

@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.dataObjects
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 
@@ -23,8 +24,8 @@ object FirestoreService {
         val userId = auth.currentUser?.uid ?: return kotlinx.coroutines.flow.flowOf(emptyList())
         return db.collection("periods")
             .whereEqualTo("userId", userId)
-            .orderBy("createdAt", Query.Direction.DESCENDING)
             .dataObjects<Period>()
+            .map { it.sortedByDescending { period -> period.createdAt } }
     }
 
     suspend fun deletePeriodAndAssociatedData(periodId: String) {
@@ -75,6 +76,10 @@ object FirestoreService {
 
     fun deleteBudget(budgetId: String) {
         db.collection("budgets").document(budgetId).delete()
+    }
+
+    fun updateBudgetPaidStatus(budgetId: String, isPaid: Boolean) {
+        db.collection("budgets").document(budgetId).update("isPaid", isPaid)
     }
 
     // Daily Spending-related functions

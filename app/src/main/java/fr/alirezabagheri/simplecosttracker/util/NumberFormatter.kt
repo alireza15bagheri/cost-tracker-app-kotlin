@@ -9,7 +9,8 @@ import java.util.Locale
 import kotlin.math.max
 
 object NumberFormatter {
-    private val formatter = NumberFormat.getNumberInstance(Locale.US)
+    private val formatter
+        get() = NumberFormat.getNumberInstance(Locale.getDefault())
 
     fun format(number: Double): String {
         return formatter.format(number)
@@ -26,7 +27,7 @@ object NumberFormatter {
 
 class NumberVisualTransformation : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText {
-        val originalText = text.text.replace(",", "")
+        val originalText = text.text.replace(",", "").replace("٬", "")
         if (originalText.isEmpty()) {
             return TransformedText(text, OffsetMapping.Identity)
         }
@@ -42,13 +43,13 @@ class NumberVisualTransformation : VisualTransformation {
         val offsetMapping = object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int {
                 if (originalText.isEmpty()) return 0
-                val commasBeforeOffset = formattedText.take(offset + (formattedText.length - originalText.length)).count { it == ',' }
+                val commasBeforeOffset = formattedText.take(offset + (formattedText.length - originalText.length)).count { !it.isDigit() }
                 return (offset + commasBeforeOffset).coerceIn(0, formattedText.length)
             }
 
             override fun transformedToOriginal(offset: Int): Int {
                 if (formattedText.isEmpty()) return 0
-                val commasBeforeOffset = formattedText.take(offset).count { it == ',' }
+                val commasBeforeOffset = formattedText.take(offset).count { !it.isDigit() }
                 return (offset - commasBeforeOffset).coerceIn(0, originalText.length)
             }
         }
