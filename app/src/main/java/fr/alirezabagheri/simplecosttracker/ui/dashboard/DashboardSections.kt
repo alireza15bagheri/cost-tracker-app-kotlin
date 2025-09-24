@@ -110,7 +110,12 @@ fun LazyListScope.budgetsSection(
     }
 }
 
-fun LazyListScope.dailySpendingsSection(spendings: List<DailySpending>, totalSpending: Double, onDeleteClick: (DailySpending) -> Unit) {
+fun LazyListScope.dailySpendingsSection(
+    spendings: List<DailySpending>,
+    totalSpending: Double,
+    dailySpendingRemainingUntilToday: Double,
+    onDeleteClick: (DailySpending) -> Unit
+) {
     item {
         Column(modifier = Modifier.fillMaxWidth()) {
             SectionTitle(text = stringResource(id = R.string.daily_house_spendings))
@@ -118,6 +123,13 @@ fun LazyListScope.dailySpendingsSection(spendings: List<DailySpending>, totalSpe
                 text = stringResource(id = R.string.total_planned, NumberFormatter.format(totalSpending)),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Text(
+                text = stringResource(id = R.string.remaining_until_today, NumberFormatter.format(dailySpendingRemainingUntilToday)),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = if (dailySpendingRemainingUntilToday >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 4.dp)
             )
         }
         Spacer(modifier = Modifier.height(8.dp))

@@ -98,7 +98,12 @@ fun DashboardScreen(
                     onDeleteClick = onDeleteClick,
                     onTogglePaidStatus = viewModel::toggleBudgetPaidStatus
                 )
-                dailySpendingsSection(spendings = uiState.spendings, totalSpending = uiState.totalPeriodSpending, onDeleteClick = onDeleteClick)
+                dailySpendingsSection(
+                    spendings = uiState.spendings,
+                    totalSpending = uiState.totalPeriodSpending,
+                    dailySpendingRemainingUntilToday = uiState.dailySpendingRemainingUntilToday,
+                    onDeleteClick = onDeleteClick
+                )
                 miscCostsSection(miscCosts = uiState.miscCosts, totalMiscCosts = uiState.totalMiscCosts, onDeleteClick = onDeleteClick)
                 item { NotesSection(notes = uiState.notesInput, onNotesChange = viewModel::onNotesChange, onSaveClick = viewModel::saveNotes) }
                 item { FinalSummarySection(totalRemaining = uiState.totalRemaining) }

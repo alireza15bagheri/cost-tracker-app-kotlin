@@ -6,6 +6,7 @@ import fr.alirezabagheri.simplecosttracker.data.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 data class DashboardUiState(
@@ -17,6 +18,7 @@ data class DashboardUiState(
     val totalBudgets: Double = 0.0,
     val spendings: List<DailySpending> = emptyList(),
     val totalPeriodSpending: Double = 0.0,
+    val dailySpendingRemainingUntilToday: Double = 0.0,
     val miscCosts: List<MiscCost> = emptyList(),
     val totalMiscCosts: Double = 0.0,
     val totalRemaining: Double = 0.0,
@@ -69,6 +71,31 @@ class DashboardViewModel : ViewModel() {
                         val totalMiscCosts = miscCosts.sumOf { it.amount }
                         val totalRemaining = totalIncomes - totalBudgets - totalPeriodSpending - totalMiscCosts
 
+                        var dailySpendingRemainingUntilToday = 0.0
+                        if (activePeriod?.startDate != null && activePeriod.endDate != null) {
+                            val calendar = Calendar.getInstance()
+                            val spendingsMap = spendings.associateBy {
+                                calendar.time = it.date
+                                Pair(calendar.get(Calendar.YEAR), calendar.get(Calendar.DAY_OF_YEAR))
+                            }
+
+                            val loopCal = Calendar.getInstance().apply { time = activePeriod.startDate }
+                            val todayCal = Calendar.getInstance()
+                            val endCal = Calendar.getInstance().apply { time = activePeriod.endDate }
+
+                            var carryover = 0.0
+
+                            // Loop from start date up to and including today, but not past the period end date.
+                            while (!loopCal.after(todayCal) && !loopCal.after(endCal)) {
+                                val key = Pair(loopCal.get(Calendar.YEAR), loopCal.get(Calendar.DAY_OF_YEAR))
+                                val spent = spendingsMap[key]?.spent ?: 0.0
+                                val remaining = activePeriod.dailySpendingLimit + carryover - spent
+                                carryover = remaining
+                                loopCal.add(Calendar.DAY_OF_MONTH, 1)
+                            }
+                            dailySpendingRemainingUntilToday = carryover
+                        }
+
                         // Create the new, complete state object from scratch
                         DashboardUiState(
                             periods = periods,
@@ -79,6 +106,7 @@ class DashboardViewModel : ViewModel() {
                             totalBudgets = totalBudgets,
                             spendings = spendings,
                             totalPeriodSpending = totalPeriodSpending,
+                            dailySpendingRemainingUntilToday = dailySpendingRemainingUntilToday,
                             miscCosts = miscCosts,
                             totalMiscCosts = totalMiscCosts,
                             totalRemaining = totalRemaining,

@@ -44,6 +44,7 @@
     <string name="total_budget">مجموع بودجه</string>
     <string name="daily_house_spendings">هزینه‌های روزانه خانه</string>
     <string name="total_planned">مجموع برنامه‌ریزی شده: %s</string>
+    <string name="remaining_until_today">مبلغ باقیمانده تا امروز: %s</string>
     <string name="miscellaneous_costs">هزینه‌های متفرقه</string>
     <string name="total_misc_costs">مجموع هزینه‌های متفرقه</string>
     <string name="confirm_deletion">تایید حذف</string>

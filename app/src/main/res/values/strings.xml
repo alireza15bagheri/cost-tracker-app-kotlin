@@ -43,6 +43,7 @@
     <string name="total_budget">Total Budget</string>
     <string name="daily_house_spendings">Daily House Spendings</string>
     <string name="total_planned">Total Planned: %s</string>
+    <string name="remaining_until_today">Remaining amount until today: %s</string>
     <string name="miscellaneous_costs">Miscellaneous Costs</string>
     <string name="total_misc_costs">Total Misc. Costs</string>
     <string name="confirm_deletion">Confirm Deletion</string>
